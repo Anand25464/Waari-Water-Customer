@@ -1,6 +1,5 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
-import 'package:get/get.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:waari_water/controller/mqtt_controller/mqtt_controller.dart';
 import 'package:waari_water/utils/constants.dart';
@@ -21,13 +20,13 @@ class SplashScreen extends StatefulWidget {
 }
 
 class _SplashScreenState extends State<SplashScreen> {
-  MqttController mqttController = Get.put(MqttController());
+  late MqttController mqttController;
 
 
   @override
   void initState() {
-    // TODO: implement initState
     super.initState();
+    mqttController = MqttController();
     mqttController.generateRandomNumber();
     Future.delayed(const Duration(seconds: 2),(){
        mqttController.connectMqtt();
