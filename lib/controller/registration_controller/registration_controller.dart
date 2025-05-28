@@ -57,8 +57,29 @@ class RegistrationCubit extends Cubit<RegistrationState> {
     _phoneNumber = phoneNumber;
   }
 
-  void setPin(String pin) {
+  void setPin(String pin, String confirmPin) {
+    if (pin.isEmpty || confirmPin.isEmpty) {
+      emit(RegistrationError("Please enter both PIN and confirmation PIN"));
+      return;
+    }
+    
+    if (pin.length != 4 || confirmPin.length != 4) {
+      emit(RegistrationError("PIN must be 4 digits"));
+      return;
+    }
+    
+    if (pin != confirmPin) {
+      emit(RegistrationError("PINs do not match"));
+      return;
+    }
+    
     _pin = pin;
+    emit(RegistrationLoading());
+    
+    // Simulate API call delay
+    Future.delayed(const Duration(seconds: 1), () {
+      emit(RegistrationSuccess("PIN set successfully"));
+    });
   }
 
   void nextStep() {
