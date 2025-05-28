@@ -1,27 +1,54 @@
-import 'package:flutter/material.dart';
-import 'package:get/get.dart';
 
-class OnboardingPageController extends GetxController{
+import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:equatable/equatable.dart';
 
-  var isSecondPage = false.obs;
-  bool get getIsSecondPage => isSecondPage.value;
-  set setIsSecondPage(bool val){
-    isSecondPage.value = val;
-    isSecondPage.refresh();
-  }
+// States
+abstract class OnboardingPageState extends Equatable {
+  const OnboardingPageState();
 
-
-  var isLastPage = false.obs;
-  bool get getIsLastPage => isLastPage.value;
-  set setIsLastPage(bool val){
-    isLastPage.value = val;
-    isLastPage.refresh();
-  }
-}
-class MyBehavior extends ScrollBehavior   {
   @override
-  Widget buildOverscrollIndicator(
-      BuildContext context, Widget child, ScrollableDetails details) {
-    return child;
+  List<Object> get props => [];
+}
+
+class OnboardingPageInitial extends OnboardingPageState {}
+
+class OnboardingPageChanged extends OnboardingPageState {
+  final int currentIndex;
+
+  const OnboardingPageChanged(this.currentIndex);
+
+  @override
+  List<Object> get props => [currentIndex];
+}
+
+class OnboardingPageCompleted extends OnboardingPageState {}
+
+// Cubit
+class OnboardingPageCubit extends Cubit<OnboardingPageState> {
+  OnboardingPageCubit() : super(OnboardingPageInitial());
+
+  int _currentIndex = 0;
+
+  void nextPage() {
+    _currentIndex++;
+    emit(OnboardingPageChanged(_currentIndex));
   }
+
+  void previousPage() {
+    if (_currentIndex > 0) {
+      _currentIndex--;
+      emit(OnboardingPageChanged(_currentIndex));
+    }
+  }
+
+  void setPage(int index) {
+    _currentIndex = index;
+    emit(OnboardingPageChanged(_currentIndex));
+  }
+
+  void completeOnboarding() {
+    emit(OnboardingPageCompleted());
+  }
+
+  int get currentIndex => _currentIndex;
 }

@@ -1,165 +1,100 @@
-import 'dart:convert';
+import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:equatable/equatable.dart';
 
-import 'package:flutter/cupertino.dart';
-import 'package:get/get.dart';
-import 'package:shared_preferences/shared_preferences.dart';
-import 'package:waari_water/controller/mqtt_controller/mqtt_controller.dart';
-import 'package:waari_water/utils/loader.dart';
-import 'package:waari_water/utils/navigation.dart';
-import 'package:waari_water/utils/toast.dart';
-import 'package:waari_water/view/home_page/home_page.dart';
-import 'package:waari_water/view/registration/view/name_registration_page.dart';
-import 'package:waari_water/view/registration/view/set_pin_view.dart';
+// States
+abstract class RegistrationState extends Equatable {
+  const RegistrationState();
 
-class RegistrationController extends GetxController{
-  MqttController mqttController = Get.find();
+  @override
+  List<Object> get props => [];
+}
 
-  var resetPin = false.obs;
-  bool get getResetPin => resetPin.value;
-  set setResetPin(bool val){
-    resetPin.value = val;
-    resetPin.refresh();
+class RegistrationInitial extends RegistrationState {}
+
+class RegistrationLoading extends RegistrationState {}
+
+class RegistrationSuccess extends RegistrationState {
+  final String message;
+
+  const RegistrationSuccess(this.message);
+
+  @override
+  List<Object> get props => [message];
+}
+
+class RegistrationError extends RegistrationState {
+  final String message;
+
+  const RegistrationError(this.message);
+
+  @override
+  List<Object> get props => [message];
+}
+
+class RegistrationStepChanged extends RegistrationState {
+  final int step;
+
+  const RegistrationStepChanged(this.step);
+
+  @override
+  List<Object> get props => [step];
+}
+
+// Cubit
+class RegistrationCubit extends Cubit<RegistrationState> {
+  RegistrationCubit() : super(RegistrationInitial());
+
+  int _currentStep = 0;
+  String _name = '';
+  String _phoneNumber = '';
+  String _pin = '';
+
+  void setName(String name) {
+    _name = name;
   }
 
-
-  var isVerified = false.obs;
-  bool get getIsVerified => isVerified.value;
-  set setIsVerified(bool val){
-    isVerified.value = val;
-    isVerified.refresh();
+  void setPhoneNumber(String phoneNumber) {
+    _phoneNumber = phoneNumber;
   }
 
+  void setPin(String pin) {
+    _pin = pin;
+  }
 
+  void nextStep() {
+    _currentStep++;
+    emit(RegistrationStepChanged(_currentStep));
+  }
 
-  getOTP(String mobileNumber)async{
-    SharedPreferences prefs = await SharedPreferences.getInstance();
-    String? clientId = prefs.getString('RandomNum');
-    try{
-      Map<String,dynamic> data = {
-        "phone": mobileNumber
-      };
-      mqttController.setCurrentTopic = "WaariWater/FE/User/SendRegOTP/Result/$clientId";
-      mqttController.publish("WaariWater/FE/User/SendRegOTP/$clientId", data);
-      mqttController.subscribe("WaariWater/FE/User/SendRegOTP/Result/$clientId",(String data) {
-        if(mqttController.getCurrentTopic == "WaariWater/FE/User/SendRegOTP/Result/$clientId"){
-          print("-------registration--------");
-          print(data);
-          final response = jsonDecode(data);
-          bool success = response['success'];
-          String message = response['message'];
-          if(success){
-            setIsVerified = true;
-          }
-          showToast(msg: message);
-        }
-        else{
-          print("------------topic not match-------------3");
-        }
-      });
-    }catch(e){
-      print("----------logIn failed----------$e");
-      Get.snackbar("Error", "Unable to send to mqtt");
+  void previousStep() {
+    if (_currentStep > 0) {
+      _currentStep--;
+      emit(RegistrationStepChanged(_currentStep));
     }
   }
 
-
-  verifyOTP(String mobileNumber, String otp)async{
-    SharedPreferences prefs = await SharedPreferences.getInstance();
-    String? clientId = prefs.getString('RandomNum');
-    try{
-      Map<String,dynamic> data = {
-        "phone": mobileNumber,
-        "otp": otp
-      };
-      mqttController.setCurrentTopic = "WaariWater/FE/User/VerifyRegOtp/Result/$clientId";
-      mqttController.publish("WaariWater/FE/User/VerifyRegOtp/$clientId", data);
-      mqttController.subscribe("WaariWater/FE/User/VerifyRegOtp/Result/$clientId", (String data) {
-          if(mqttController.getCurrentTopic == "WaariWater/FE/User/VerifyRegOtp/Result/$clientId"){
-            print("--------verifiy registration--------");
-            print(data);
-            final response = jsonDecode(data);
-            bool success = response['success'];
-            if(success) {
-              CustomNavigation.push(RegistrationUserDetailsPage(userMobile: mobileNumber,));
-            }else{
-              String message = response['message'];
-              showToast(msg: message);
-            }
-          }
-          else{
-            print("------------topic not match-------------4");
-          }
-      });
-
-    }catch(e){
-      print("----------logIn failed----------$e");
-      Get.snackbar("Error", "Unable to send to mqtt");
+  void register() async {
+    emit(RegistrationLoading());
+    try {
+      // Add your registration logic here
+      await Future.delayed(const Duration(seconds: 2)); // Simulate API call
+      emit(RegistrationSuccess("Registration successful"));
+    } catch (e) {
+      emit(RegistrationError("Registration failed: ${e.toString()}"));
     }
   }
 
-
-  submitUserDetails(String userName, String email, String phone)async{
-    try{
-      Map<String,dynamic> data = {
-        "userName": userName,
-        "email": email,
-        "phone": phone
-      };
-      SharedPreferences prefs = await SharedPreferences.getInstance();
-      String? clientId = prefs.getString('RandomNum');
-      mqttController.setCurrentTopic = "WaariWater/FE/User/SaveCustomerDetails/Result/$clientId";
-      mqttController.publish("WaariWater/FE/User/SaveCustomerDetails/$clientId", data);
-      mqttController.subscribe("WaariWater/FE/User/SaveCustomerDetails/Result/$clientId", (String data) {
-        if(mqttController.getCurrentTopic == "WaariWater/FE/User/SaveCustomerDetails/Result/$clientId"){
-          print("-------------submitUserDetails---------------");
-          print(data);
-          final response = jsonDecode(data);
-          bool success = response['success'];
-          if(success){
-            CustomNavigation.push( SetPinPage(userMobile: phone,));
-          } else{
-            String message = response['message'];
-            showToast(msg: message);
-          }
-
-        }
-
-      });
-    }catch(e){
-      print("--------------submitUserDetails failed $e------------");
-      Get.snackbar("Error", "Unable to save user details");
-    }
+  void reset() {
+    _currentStep = 0;
+    _name = '';
+    _phoneNumber = '';
+    _pin = '';
+    emit(RegistrationInitial());
   }
 
-
-  setUserPin(String pin, String phone,BuildContext context)async{
-    try{
-      Map<String,dynamic> data = {
-        "phone": phone,
-        "pin" : pin
-      };
-      SharedPreferences prefs = await SharedPreferences.getInstance();
-      String? clientId = prefs.getString('RandomNum');
-      mqttController.setCurrentTopic = "WaariWater/FE/User/SetCustomerPin/Result/$clientId";
-      mqttController.publish("WaariWater/FE/User/SetCustomerPin/$clientId", data);
-      mqttController.subscribe("WaariWater/FE/User/SetCustomerPin/Result/$clientId", (String data) {
-        if(mqttController.getCurrentTopic == "WaariWater/FE/User/SetCustomerPin/Result/$clientId"){
-          print(data);
-          final response = jsonDecode(data);
-          bool success = response['success'];
-          if(success){
-            CustomNavigation.pushAndRemoveUntil(const HomePage());
-            prefs.setBool("isUser", true);
-            prefs.setString("userPhone", phone);
-          } else{
-            String message = response['message'];
-            showToast(msg: message);
-          }
-        }
-      });
-    }catch(e){
-      print("--------------setUserPin failed $e------------");
-      Get.snackbar("Error", "Unable to set user pin");
-    }
-  }
+  // Getters
+  int get currentStep => _currentStep;
+  String get name => _name;
+  String get phoneNumber => _phoneNumber;
+  String get pin => _pin;
 }

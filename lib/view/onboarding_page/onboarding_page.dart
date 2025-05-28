@@ -1,20 +1,11 @@
 import 'package:flutter/material.dart';
-import 'package:get/get.dart';
-import 'package:shared_preferences/shared_preferences.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:waari_water/controller/onboarding_page_controller/onboarding_page_controller.dart';
 import 'package:waari_water/utils/constants.dart';
 import 'package:waari_water/utils/navigation.dart';
 import 'package:waari_water/view/login_page/login_page.dart';
-
-
-
-class MyBehavior extends ScrollBehavior {
-  @override
-  Widget buildOverscrollIndicator(
-      BuildContext context, Widget child, ScrollableDetails details) {
-    return child;
-  }
-}
+import 'package:shared_preferences/shared_preferences.dart';
 
 class OnboardingPage extends StatefulWidget {
   const OnboardingPage({super.key});
@@ -24,229 +15,142 @@ class OnboardingPage extends StatefulWidget {
 }
 
 class _OnboardingPageState extends State<OnboardingPage> {
-  OnboardingPageController onboardingPageController = Get.put(OnboardingPageController());
- final controller = PageController();
-
-
-  @override
-  void dispose() {
-    // 5TODO: implement dispose
-    super.dispose();
-    controller.dispose();
-  }
+  final PageController _pageController = PageController();
 
   @override
   Widget build(BuildContext context) {
-    return Obx((){
-      return Scaffold(
-        body: Container(
-          padding: const EdgeInsets.only(bottom: 80),
-          child: ScrollConfiguration(
-            behavior: MyBehavior(),
-            child: PageView(
-              controller: controller,
-              onPageChanged: (index){
-                onboardingPageController.setIsLastPage = index == 2;
-                onboardingPageController.setIsSecondPage = index == 1;
-              },
-              children: [
-                Container(
-                  decoration: const BoxDecoration(image: DecorationImage(image: Constants.waterWavePNGImage,fit: BoxFit.cover,)),
-                    child: const Image(image:  Constants.onBoardingDecorationImage,fit: BoxFit.cover,)
-                ),
-                Container(
-                  decoration: const BoxDecoration(image: DecorationImage(image: Constants.waterBubblePNGImage,fit: BoxFit.cover,)),
-                  child: const Image(image:  Constants.onBoardingDecorationImage,fit: BoxFit.cover,)
-                ),
-                Container(
-                  decoration: const BoxDecoration(image: DecorationImage(image: Constants.wavePNGImage,fit: BoxFit.cover)),
-                    child: const Image(image:  Constants.onBoardingDecorationImage,fit: BoxFit.cover,)
-                ),
-              ],
-            ),
-          ),
-        ),
-        bottomSheet: onboardingPageController.getIsLastPage ? Container(
-          padding: const EdgeInsets.symmetric(horizontal: 10),
-          color: Colors.white,
-          height: MediaQuery.of(context).size.height/3.3,
-          child: Padding(
-            padding: const EdgeInsets.only(left: 10,right: 10),
-            child: Column(
-              children: [
-                const Text("Get Pure Water Anywhere", style: TextStyle(fontWeight: FontWeight.w900,color: Constants.textColor,fontSize: 38),),
-                const Text("Get pure water anytime anywhere from our vending machines.",
-                  style: TextStyle(color: Constants.textDisableColor,fontSize: 18,fontWeight: FontWeight.w600),),
-                const Spacer(),
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                     TextButton(onPressed: (){
-                      controller.jumpToPage(2);
-                    }, child:  Text("SKIP",
-                    style: TextStyle(color: !onboardingPageController.getIsLastPage ? Constants.primaryColor : Colors.white),)),
-
-                   Row(
-                     children: [
-                       Container(
-                         height: 10,
-                         width: 10,
-                         decoration: BoxDecoration(color: Constants.primaryColor,borderRadius: BorderRadius.circular(5)),
-                       ),
-                       const SizedBox(width: 2,),
-                       Container(
-                         height: 10,
-                         width: 10,
-                         decoration: BoxDecoration(color: Constants.primaryColor,borderRadius: BorderRadius.circular(5)),
-                       ),
-                       const SizedBox(width: 2,),
-                       Container(
-                         height: 10,
-                         width: 19,
-                         decoration: BoxDecoration(color: Constants.primaryColor,borderRadius: BorderRadius.circular(5)),
-                       ),
-                     ],
-                   ),
-                    GestureDetector(
-                      onTap: ()async{
-                        final prefs = await SharedPreferences.getInstance();
-                        prefs.setBool("showHome", true);
-                        CustomNavigation.pushNamed(const LoginPage());
+    return BlocProvider(
+      create: (context) => OnboardingPageCubit(),
+      child: Scaffold(
+        backgroundColor: Constants.primaryColor,
+        body: BlocListener<OnboardingPageCubit, OnboardingPageState>(
+          listener: (context, state) {
+            if (state is OnboardingPageCompleted) {
+              _completeOnboarding();
+            } else if (state is OnboardingPageChanged) {
+              _pageController.animateToPage(
+                state.currentIndex,
+                duration: const Duration(milliseconds: 300),
+                curve: Curves.easeInOut,
+              );
+            }
+          },
+          child: BlocBuilder<OnboardingPageCubit, OnboardingPageState>(
+            builder: (context, state) {
+              return Column(
+                children: [
+                  Expanded(
+                    child: PageView(
+                      controller: _pageController,
+                      onPageChanged: (index) {
+                        context.read<OnboardingPageCubit>().setPage(index);
                       },
-                      child: Container(
-                        height: 45,
-                        width: 45,
-                        decoration: const BoxDecoration(shape: BoxShape.circle,color: Constants.primaryColor),
-                        child: const Icon(Icons.arrow_right_alt_outlined,color: Colors.white,),
-                      ),
-                    ),
-                  ],
-                ),
-                const Spacer(),
-              ],
-            ),
-          ),
-        )
-
-            : onboardingPageController.getIsSecondPage ? Container(
-          padding: const EdgeInsets.symmetric(horizontal: 10),
-          color: Colors.white,
-          height: MediaQuery.of(context).size.height/3.3,
-          child: Padding(
-            padding: const EdgeInsets.only(left: 10,right: 10),
-            child: Column(
-              children: [
-                const Text("Supply to Customer's Place.", style: TextStyle(fontWeight: FontWeight.w900,color: Constants.textColor,fontSize: 38),),
-                const Text("Don’t have water source. No worry we will supply pure water to your location.",
-                  style: TextStyle(color: Constants.textDisableColor,fontSize: 18,fontWeight: FontWeight.w600),),
-                const Spacer(),
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    TextButton(onPressed: (){
-                      controller.jumpToPage(2);
-
-                    }, child: const Text("SKIP")),
-                    Row(
                       children: [
-                        Container(
-                          height: 10,
-                          width: 10,
-                          decoration: BoxDecoration(color: Constants.primaryColor,borderRadius: BorderRadius.circular(5)),
+                        _buildOnboardingPage(
+                          "Welcome to Waari Water",
+                          "Your trusted water delivery service",
+                          "assets/images/water_wave.png",
                         ),
-                        const SizedBox(width: 2,),
-                        Container(
-                          height: 10,
-                          width: 19,
-                          decoration: BoxDecoration(color: Constants.primaryColor,borderRadius: BorderRadius.circular(5)),
+                        _buildOnboardingPage(
+                          "Fast Delivery",
+                          "Get fresh water delivered to your doorstep",
+                          "assets/images/water_bubble_wave.png",
                         ),
-                        const SizedBox(width: 2,),
-                        Container(
-                          height: 10,
-                          width: 10,
-                          decoration: BoxDecoration(color: Constants.primaryColor,borderRadius: BorderRadius.circular(5)),
+                        _buildOnboardingPage(
+                          "Easy Ordering",
+                          "Order with just a few taps",
+                          "assets/images/wave_splash.png",
                         ),
                       ],
                     ),
-                    GestureDetector(
-                      onTap: (){
-                        controller.nextPage(duration: const Duration(milliseconds: 500), curve: Curves.easeInOut);
-                      },
-                      child: Container(
-                        height: 45,
-                        width: 45,
-                        decoration: const BoxDecoration(shape: BoxShape.circle,color: Constants.primaryColor),
-                        child: const Icon(Icons.arrow_right_alt_outlined,color: Colors.white,),
-                      ),
-                    ),
-                  ],
-                ),
-                const Spacer(),
-              ],
-            ),
-          ),
-        )
-
-            : Container(
-          padding: const EdgeInsets.symmetric(horizontal: 10),
-          color: Colors.white,
-          height: MediaQuery.of(context).size.height/3.3,
-          child: Padding(
-            padding: const EdgeInsets.only(left: 10,right: 10),
-            child: Column(
-              children: [
-                const Text("Water Purification Plan", style: TextStyle(fontWeight: FontWeight.w900,color: Constants.textColor,fontSize: 38),),
-                const Text("Providing water the best water purification plan at lower cost.",
-                  style: TextStyle(color: Constants.textDisableColor,fontSize: 18,fontWeight: FontWeight.w600),),
-                const Spacer(),
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    TextButton(onPressed: (){
-                      controller.jumpToPage(2);
-
-                    }, child: const Text("SKIP")),
-                    Row(
+                  ),
+                  Padding(
+                    padding: EdgeInsets.all(20.w),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
-                        Container(
-                          height: 10,
-                          width: 19,
-                          decoration: BoxDecoration(color: Constants.primaryColor,borderRadius: BorderRadius.circular(5)),
+                        TextButton(
+                          onPressed: () {
+                            context.read<OnboardingPageCubit>().completeOnboarding();
+                          },
+                          child: Text(
+                            "Skip",
+                            style: TextStyle(
+                              color: Colors.white,
+                              fontSize: 16.sp,
+                            ),
+                          ),
                         ),
-                        const SizedBox(width: 2,),
-                        Container(
-                          height: 10,
-                          width: 10,
-                          decoration: BoxDecoration(color: Constants.primaryColor,borderRadius: BorderRadius.circular(5)),
-                        ),
-                        const SizedBox(width: 2,),
-                        Container(
-                          height: 10,
-                          width: 10,
-                          decoration: BoxDecoration(color: Constants.primaryColor,borderRadius: BorderRadius.circular(5)),
+                        ElevatedButton(
+                          onPressed: () {
+                            final cubit = context.read<OnboardingPageCubit>();
+                            if (cubit.currentIndex < 2) {
+                              cubit.nextPage();
+                            } else {
+                              cubit.completeOnboarding();
+                            }
+                          },
+                          child: Text(
+                            context.read<OnboardingPageCubit>().currentIndex < 2 ? "Next" : "Get Started",
+                            style: TextStyle(fontSize: 16.sp),
+                          ),
                         ),
                       ],
                     ),
-                    GestureDetector(
-                      onTap: (){
-                        controller.nextPage(duration: const Duration(milliseconds: 500), curve: Curves.easeInOut);
-                      },
-                      child: Container(
-                        height: 45,
-                        width: 45,
-                        decoration: const BoxDecoration(shape: BoxShape.circle,color: Constants.primaryColor),
-                        child: const Icon(Icons.arrow_right_alt_outlined,color: Colors.white,),
-                      ),
-                    ),
-                  ],
-                ),
-                const Spacer(),
-              ],
-            ),
+                  ),
+                ],
+              );
+            },
           ),
         ),
-      );
-    });
+      ),
+    );
+  }
+
+  Widget _buildOnboardingPage(String title, String description, String imagePath) {
+    return Padding(
+      padding: EdgeInsets.all(20.w),
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Image.asset(
+            imagePath,
+            height: 200.h,
+            width: 200.w,
+          ),
+          SizedBox(height: 40.h),
+          Text(
+            title,
+            style: TextStyle(
+              fontSize: 24.sp,
+              fontWeight: FontWeight.bold,
+              color: Colors.white,
+            ),
+            textAlign: TextAlign.center,
+          ),
+          SizedBox(height: 20.h),
+          Text(
+            description,
+            style: TextStyle(
+              fontSize: 16.sp,
+              color: Colors.white70,
+            ),
+            textAlign: TextAlign.center,
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _completeOnboarding() async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setBool("showHome", true);
+    CustomNavigation.pushNamed(const LoginPage());
+  }
+
+  @override
+  void dispose() {
+    _pageController.dispose();
+    super.dispose();
   }
 }
-
