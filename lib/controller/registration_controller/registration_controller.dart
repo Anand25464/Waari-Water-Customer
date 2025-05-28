@@ -84,6 +84,26 @@ class RegistrationCubit extends Cubit<RegistrationState> {
     }
   }
 
+  Future<void> resetPassword(String phoneNumber) async {
+    if (phoneNumber.isEmpty) {
+      emit(RegistrationError("Please enter phone number"));
+      return;
+    }
+
+    emit(RegistrationLoading());
+
+    try {
+      // Simulate API call delay
+      await Future.delayed(const Duration(seconds: 2));
+
+      // Here you would typically make an API call to send reset password link
+      // For now, we'll just simulate a successful response
+      emit(RegistrationSuccess("Reset link sent to $phoneNumber"));
+    } catch (e) {
+      emit(RegistrationError("Failed to send reset link: ${e.toString()}"));
+    }
+  }
+
   void reset() {
     _currentStep = 0;
     _name = '';
