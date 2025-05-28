@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_screenutil/flutter_screenutil.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
@@ -12,11 +13,18 @@ class _HomePageState extends State<HomePage> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text("HomePage"),
+        title: Text(
+          "HomePage",
+          style: TextStyle(fontSize: 18.sp),
+        ),
+        toolbarHeight: 56.h,
       ),
       body: Center(
-        child: Text("Home Page",style: TextStyle(fontSize: 34),),
-      ),// hello
+        child: Text(
+          "Home Page",
+          style: TextStyle(fontSize: 34.sp),
+        ),
+      ),
     );
   }
 }

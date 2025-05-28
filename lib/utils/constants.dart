@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_screenutil/flutter_screenutil.dart';
 
 class Constants{
 
@@ -108,5 +109,40 @@ class Constants{
 
   static const ImageProvider backArrowImage = AssetImage('assets/images/back_arrow.png');
 
+  // Responsive Text Styles
+  static TextStyle get headingStyle => TextStyle(
+    fontSize: 24.sp,
+    fontWeight: FontWeight.bold,
+    color: textColor,
+  );
+
+  static TextStyle get subHeadingStyle => TextStyle(
+    fontSize: 18.sp,
+    fontWeight: FontWeight.w600,
+    color: textColor,
+  );
+
+  static TextStyle get bodyStyle => TextStyle(
+    fontSize: 14.sp,
+    color: textColor,
+  );
+
+  static TextStyle get captionStyle => TextStyle(
+    fontSize: 12.sp,
+    color: textDisableColor,
+  );
+
+  // Responsive Spacing
+  static double get smallSpacing => 8.h;
+  static double get mediumSpacing => 16.h;
+  static double get largeSpacing => 24.h;
+  static double get extraLargeSpacing => 32.h;
+
+  // Responsive Padding
+  static EdgeInsets get smallPadding => EdgeInsets.all(8.w);
+  static EdgeInsets get mediumPadding => EdgeInsets.all(16.w);
+  static EdgeInsets get largePadding => EdgeInsets.all(24.w);
+  static EdgeInsets get horizontalPadding => EdgeInsets.symmetric(horizontal: 16.w);
+  static EdgeInsets get verticalPadding => EdgeInsets.symmetric(vertical: 16.h);
 
 }
