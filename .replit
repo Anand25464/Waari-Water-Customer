@@ -1,0 +1,8 @@
+modules = ["cpp-clang14", "ruby-3.2", "swift-5.8"]
+run = "flutter pub get"
+
+[nix]
+channel = "stable-24_05"
+
+[deployment]
+run = ["sh", "-c", "flutter pub get"]
