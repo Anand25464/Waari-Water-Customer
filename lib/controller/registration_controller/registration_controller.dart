@@ -113,6 +113,29 @@ class RegistrationCubit extends Cubit<RegistrationState> {
     }
   }
 
+  Future<void> registerPhone(String phoneNumber) async {
+    if (phoneNumber.isEmpty) {
+      emit(RegistrationError("Please enter phone number"));
+      return;
+    }
+
+    emit(RegistrationLoading());
+
+    try {
+      // Set the phone number
+      setPhoneNumber(phoneNumber);
+      
+      // Simulate API call delay
+      await Future.delayed(const Duration(seconds: 2));
+
+      // Here you would typically make an API call to register/verify phone number
+      // For now, we'll just simulate a successful response
+      emit(RegistrationSuccess("Phone number registered successfully"));
+    } catch (e) {
+      emit(RegistrationError("Failed to register phone number: ${e.toString()}"));
+    }
+  }
+
   Future<void> resetPassword(String phoneNumber) async {
     if (phoneNumber.isEmpty) {
       emit(RegistrationError("Please enter phone number"));
