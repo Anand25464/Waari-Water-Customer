@@ -26,7 +26,7 @@ class MyApp extends StatelessWidget {
           create: (context) => MqttController(),
         ),
         BlocProvider<AuthCubit>(
-          create: (context) => AuthCubit(),
+          create: (context) => getIt<AuthCubit>(),
         ),
         BlocProvider<LoginPageCubit>(
           create: (context) => LoginPageCubit(),
