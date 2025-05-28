@@ -1,11 +1,11 @@
 import 'package:flutter/cupertino.dart';
-import 'package:get/route_manager.dart';
+import 'package:flutter/material.dart';
 
 
 class CustomNavigation {
   static push(Widget navigation, {bool fullScreenDialog = false}) async {
     return Navigator.push(
-      Get.context!,
+      navigatorKey.currentContext!,
       CupertinoPageRoute(
         builder: (context) => navigation,
         fullscreenDialog: fullScreenDialog,
@@ -14,7 +14,7 @@ class CustomNavigation {
   }
 
   static pushAndRemoveUntil(Widget navigation) async {
-    return Navigator.of( Get.context!,)
+    return Navigator.of(navigatorKey.currentContext!,)
         .pushAndRemoveUntil(
         CupertinoPageRoute(builder: (context) => navigation),
             (Route<dynamic> route) => false);
@@ -22,7 +22,7 @@ class CustomNavigation {
 
   static pushNamed(Widget navigation) {
     return Navigator.pushReplacement(
-      Get.context!,
+      navigatorKey.currentContext!,
       CupertinoPageRoute(
         builder: (context) => navigation,
       ),
@@ -30,8 +30,10 @@ class CustomNavigation {
   }
 
   static pop({bool closeOverlay = false, dynamic data}) async {
-    return Navigator.pop( Get.context!,);
+    return Navigator.pop( navigatorKey.currentContext!,);
   }
+
+  static final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
 
 
 }
