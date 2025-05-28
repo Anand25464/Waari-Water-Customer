@@ -11,6 +11,7 @@ import 'package:waari_water/utils/toast.dart';
 import 'package:waari_water/view/home_page/home_page.dart';
 import 'package:waari_water/view/m_pin_page/m_pin_page.dart';
 import 'package:waari_water/view/registration/view/set_pin_view.dart';
+import 'package:waari_water/view/registration/view/registration_page_view.dart';
 
 // States
 abstract class LoginPageState extends Equatable {
@@ -165,6 +166,37 @@ class LoginPageCubit extends Cubit<LoginPageState> {
       emit(LoginPageError("Unable to userLogin: ${e.toString()}"));
     }
   }
+
+  Future<void> login(String phoneNumber) async {
+    if (phoneNumber.isEmpty) {
+      emit(LoginPageError("Please enter phone number"));
+      return;
+    }
+
+    emit(LoginPageLoading());
+
+    try {
+      // Simulate API call delay
+      await Future.delayed(const Duration(seconds: 2));
+
+      // Check if user exists in SharedPreferences
+      final prefs = await SharedPreferences.getInstance();
+      final storedPhone = prefs.getString("phone_number");
+
+      if (storedPhone == phoneNumber) {
+        // User exists, proceed to PIN page
+        await prefs.setBool("isUser", true);
+        emit(LoginPageSuccess("Login successful"));
+      } else {
+        // User doesn't exist, navigate to registration
+        emit(LoginPageSuccess("User not found, redirecting to registration"));
+        CustomNavigation.pushNamed(const RegistrationPageView());
+      }
+    } catch (e) {
+      emit(LoginPageError("Login failed: ${e.toString()}"));
+    }
+  }
+
 
   void reset() {
     emit(LoginPageInitial());
