@@ -84,6 +84,35 @@ class RegistrationCubit extends Cubit<RegistrationState> {
     }
   }
 
+  Future<void> registerUserDetails(String name, String email) async {
+    if (name.isEmpty) {
+      emit(RegistrationError("Please enter your name"));
+      return;
+    }
+    
+    if (email.isEmpty) {
+      emit(RegistrationError("Please enter your email"));
+      return;
+    }
+
+    emit(RegistrationLoading());
+
+    try {
+      // Set the user details
+      setName(name);
+      // You might want to add email field to the cubit state if needed
+      
+      // Simulate API call delay
+      await Future.delayed(const Duration(seconds: 2));
+
+      // Here you would typically make an API call to register user details
+      // For now, we'll just simulate a successful response
+      emit(RegistrationSuccess("User details registered successfully"));
+    } catch (e) {
+      emit(RegistrationError("Failed to register user details: ${e.toString()}"));
+    }
+  }
+
   Future<void> resetPassword(String phoneNumber) async {
     if (phoneNumber.isEmpty) {
       emit(RegistrationError("Please enter phone number"));
