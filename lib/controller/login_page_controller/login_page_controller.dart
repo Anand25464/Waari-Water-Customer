@@ -1,30 +1,39 @@
+
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 // Login Page State
 class LoginPageState {
+  final String phoneNumber;
+  final String otp;
   final bool isLoading;
   final String? message;
   final String? error;
-  final bool isLoginSuccessful;
+  final bool isOtpSent;
 
   const LoginPageState({
+    this.phoneNumber = '',
+    this.otp = '',
     this.isLoading = false,
     this.message,
     this.error,
-    this.isLoginSuccessful = false,
+    this.isOtpSent = false,
   });
 
   LoginPageState copyWith({
+    String? phoneNumber,
+    String? otp,
     bool? isLoading,
     String? message,
     String? error,
-    bool? isLoginSuccessful,
+    bool? isOtpSent,
   }) {
     return LoginPageState(
+      phoneNumber: phoneNumber ?? this.phoneNumber,
+      otp: otp ?? this.otp,
       isLoading: isLoading ?? this.isLoading,
       message: message ?? this.message,
-      error: error ?? this.error,
-      isLoginSuccessful: isLoginSuccessful ?? this.isLoginSuccessful,
+      error: error,
+      isOtpSent: isOtpSent ?? this.isOtpSent,
     );
   }
 }
@@ -33,42 +42,12 @@ class LoginPageState {
 class LoginPageController extends StateNotifier<LoginPageState> {
   LoginPageController() : super(const LoginPageState());
 
-  Future<void> login(String phoneNumber, String password) async {
-    if (phoneNumber.isEmpty) {
-      state = state.copyWith(error: "Please enter phone number");
-      return;
-    }
+  void setPhoneNumber(String phoneNumber) {
+    state = state.copyWith(phoneNumber: phoneNumber);
+  }
 
-    if (password.isEmpty) {
-      state = state.copyWith(error: "Please enter password");
-      return;
-    }
-
-    state = state.copyWith(isLoading: true, error: null);
-
-    try {
-      // Simulate API call delay
-      await Future.delayed(const Duration(seconds: 2));
-
-      // Mock login validation
-      if (phoneNumber == "1234567890" && password == "password") {
-        state = state.copyWith(
-          isLoading: false,
-          isLoginSuccessful: true,
-          message: "Login successful",
-        );
-      } else {
-        state = state.copyWith(
-          isLoading: false,
-          error: "Invalid credentials",
-        );
-      }
-    } catch (e) {
-      state = state.copyWith(
-        isLoading: false,
-        error: "Login failed: ${e.toString()}",
-      );
-    }
+  void setOtp(String otp) {
+    state = state.copyWith(otp: otp);
   }
 
   Future<void> sendOtp(String phoneNumber) async {
@@ -80,10 +59,12 @@ class LoginPageController extends StateNotifier<LoginPageState> {
     state = state.copyWith(isLoading: true, error: null);
 
     try {
-      await Future.delayed(const Duration(seconds: 2));
+      setPhoneNumber(phoneNumber);
+      await Future.delayed(const Duration(seconds: 2)); // Simulate API call
       state = state.copyWith(
         isLoading: false,
-        message: "OTP sent to $phoneNumber",
+        isOtpSent: true,
+        message: "OTP sent successfully to $phoneNumber",
       );
     } catch (e) {
       state = state.copyWith(
@@ -93,44 +74,67 @@ class LoginPageController extends StateNotifier<LoginPageState> {
     }
   }
 
-  Future<void> verifyOtp(String phoneNumber, String otp) async {
-    if (phoneNumber.isEmpty || otp.isEmpty) {
-      state = state.copyWith(error: "Please enter phone number and OTP");
+  Future<void> verifyOtp(String otp) async {
+    if (otp.isEmpty) {
+      state = state.copyWith(error: "Please enter OTP");
+      return;
+    }
+
+    if (otp.length != 6) {
+      state = state.copyWith(error: "OTP must be 6 digits");
       return;
     }
 
     state = state.copyWith(isLoading: true, error: null);
 
     try {
-      await Future.delayed(const Duration(seconds: 2));
-
-      // Mock OTP validation
-      if (otp == "1234") {
-        state = state.copyWith(
-          isLoading: false,
-          isLoginSuccessful: true,
-          message: "OTP verified successfully",
-        );
-      } else {
-        state = state.copyWith(
-          isLoading: false,
-          error: "Invalid OTP",
-        );
-      }
+      setOtp(otp);
+      await Future.delayed(const Duration(seconds: 2)); // Simulate API call
+      state = state.copyWith(
+        isLoading: false,
+        message: "OTP verified successfully",
+      );
     } catch (e) {
       state = state.copyWith(
         isLoading: false,
-        error: "OTP verification failed: ${e.toString()}",
+        error: "Failed to verify OTP: ${e.toString()}",
       );
     }
   }
 
-  void clearMessages() {
-    state = state.copyWith(message: null, error: null);
+  Future<void> loginWithPin(String pin) async {
+    if (pin.isEmpty) {
+      state = state.copyWith(error: "Please enter PIN");
+      return;
+    }
+
+    if (pin.length != 4) {
+      state = state.copyWith(error: "PIN must be 4 digits");
+      return;
+    }
+
+    state = state.copyWith(isLoading: true, error: null);
+
+    try {
+      await Future.delayed(const Duration(seconds: 2)); // Simulate API call
+      state = state.copyWith(
+        isLoading: false,
+        message: "Login successful",
+      );
+    } catch (e) {
+      state = state.copyWith(
+        isLoading: false,
+        error: "Login failed: ${e.toString()}",
+      );
+    }
   }
 
   void reset() {
     state = const LoginPageState();
+  }
+
+  void clearMessages() {
+    state = state.copyWith(message: null, error: null);
   }
 }
 

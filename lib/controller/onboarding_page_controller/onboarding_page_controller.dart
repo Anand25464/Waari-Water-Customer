@@ -3,21 +3,21 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 // Onboarding Page State
 class OnboardingPageState {
-  final int currentPage;
-  final bool isCompleted;
+  final int currentPageIndex;
+  final bool isLastPage;
 
   const OnboardingPageState({
-    this.currentPage = 0,
-    this.isCompleted = false,
+    this.currentPageIndex = 0,
+    this.isLastPage = false,
   });
 
   OnboardingPageState copyWith({
-    int? currentPage,
-    bool? isCompleted,
+    int? currentPageIndex,
+    bool? isLastPage,
   }) {
     return OnboardingPageState(
-      currentPage: currentPage ?? this.currentPage,
-      isCompleted: isCompleted ?? this.isCompleted,
+      currentPageIndex: currentPageIndex ?? this.currentPageIndex,
+      isLastPage: isLastPage ?? this.isLastPage,
     );
   }
 }
@@ -26,26 +26,40 @@ class OnboardingPageState {
 class OnboardingPageController extends StateNotifier<OnboardingPageState> {
   OnboardingPageController() : super(const OnboardingPageState());
 
+  static const int totalPages = 3; // Adjust based on your onboarding pages
+
+  void setCurrentPage(int index) {
+    state = state.copyWith(
+      currentPageIndex: index,
+      isLastPage: index == totalPages - 1,
+    );
+  }
+
   void nextPage() {
-    if (state.currentPage < 2) { // Assuming 3 onboarding pages (0, 1, 2)
-      state = state.copyWith(currentPage: state.currentPage + 1);
-    } else {
-      state = state.copyWith(isCompleted: true);
+    if (state.currentPageIndex < totalPages - 1) {
+      final newIndex = state.currentPageIndex + 1;
+      state = state.copyWith(
+        currentPageIndex: newIndex,
+        isLastPage: newIndex == totalPages - 1,
+      );
     }
   }
 
   void previousPage() {
-    if (state.currentPage > 0) {
-      state = state.copyWith(currentPage: state.currentPage - 1);
+    if (state.currentPageIndex > 0) {
+      final newIndex = state.currentPageIndex - 1;
+      state = state.copyWith(
+        currentPageIndex: newIndex,
+        isLastPage: newIndex == totalPages - 1,
+      );
     }
   }
 
-  void goToPage(int page) {
-    state = state.copyWith(currentPage: page);
-  }
-
-  void completeOnboarding() {
-    state = state.copyWith(isCompleted: true);
+  void skipToEnd() {
+    state = state.copyWith(
+      currentPageIndex: totalPages - 1,
+      isLastPage: true,
+    );
   }
 
   void reset() {

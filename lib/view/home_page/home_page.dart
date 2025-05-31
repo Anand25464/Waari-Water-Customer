@@ -1,27 +1,41 @@
 
 import 'package:flutter/material.dart';
-import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:waari_water/controller/mqtt_controller/mqtt_controller.dart';
 import 'package:waari_water/utils/constants.dart';
 
-// Home Page Cubit
-abstract class HomePageState {}
-
-class HomePageInitial extends HomePageState {}
-
-class HomePageLoading extends HomePageState {}
-
-class HomePageLoaded extends HomePageState {
+// Home Page State
+class HomePageState {
+  final bool isLoading;
   final List<String> services;
-  HomePageLoaded(this.services);
+  final String? error;
+
+  const HomePageState({
+    this.isLoading = false,
+    this.services = const [],
+    this.error,
+  });
+
+  HomePageState copyWith({
+    bool? isLoading,
+    List<String>? services,
+    String? error,
+  }) {
+    return HomePageState(
+      isLoading: isLoading ?? this.isLoading,
+      services: services ?? this.services,
+      error: error,
+    );
+  }
 }
 
-class HomePageCubit extends Cubit<HomePageState> {
-  HomePageCubit() : super(HomePageInitial());
+// Home Page Controller using Riverpod
+class HomePageController extends StateNotifier<HomePageState> {
+  HomePageController() : super(const HomePageState());
 
   void loadServices() {
-    emit(HomePageLoading());
+    state = state.copyWith(isLoading: true, error: null);
     
     // Simulate loading services
     Future.delayed(const Duration(seconds: 1), () {
@@ -31,54 +45,62 @@ class HomePageCubit extends Cubit<HomePageState> {
         "Maintenance",
         "Subscription"
       ];
-      emit(HomePageLoaded(services));
+      state = state.copyWith(isLoading: false, services: services);
     });
   }
 }
 
-class HomePage extends StatefulWidget {
+// Provider for Home Page Controller
+final homePageControllerProvider = StateNotifierProvider<HomePageController, HomePageState>((ref) {
+  return HomePageController();
+});
+
+class HomePage extends ConsumerStatefulWidget {
   const HomePage({super.key});
 
   @override
-  State<HomePage> createState() => _HomePageState();
+  ConsumerState<HomePage> createState() => _HomePageState();
 }
 
-class _HomePageState extends State<HomePage> {
+class _HomePageState extends ConsumerState<HomePage> {
   @override
   void initState() {
     super.initState();
-    context.read<HomePageCubit>().loadServices();
+    // Load services when the widget initializes
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      ref.read(homePageControllerProvider.notifier).loadServices();
+    });
   }
 
   @override
   Widget build(BuildContext context) {
-    return BlocProvider(
-      create: (context) => HomePageCubit()..loadServices(),
-      child: Scaffold(
-        appBar: AppBar(
-          title: Text(
-            "Waari Water",
-            style: TextStyle(fontSize: 18.sp),
+    final homeState = ref.watch(homePageControllerProvider);
+    final mqttState = ref.watch(mqttControllerProvider);
+    
+    // Listen to MQTT state changes
+    ref.listen<MqttState>(mqttControllerProvider, (previous, next) {
+      if (next.error != null) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(next.error!),
+            backgroundColor: Colors.red,
           ),
-          backgroundColor: Constants.primaryColor,
+        );
+      }
+    });
+
+    return Scaffold(
+      appBar: AppBar(
+        title: Text(
+          "Waari Water",
+          style: TextStyle(fontSize: 18.sp),
         ),
-        body: BlocListener<MqttController, MqttState>(
-          listener: (context, state) {
-            if (state is MqttError) {
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(
-                  content: Text(state.message),
-                  backgroundColor: Colors.red,
-                ),
-              );
-            }
-          },
-          child: BlocBuilder<HomePageCubit, HomePageState>(
-            builder: (context, state) {
-              if (state is HomePageLoading) {
-                return const Center(child: CircularProgressIndicator());
-              } else if (state is HomePageLoaded) {
-                return Padding(
+        backgroundColor: Constants.primaryColor,
+      ),
+      body: homeState.isLoading
+          ? const Center(child: CircularProgressIndicator())
+          : homeState.services.isNotEmpty
+              ? Padding(
                   padding: EdgeInsets.all(16.w),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
@@ -107,7 +129,7 @@ class _HomePageState extends State<HomePage> {
                             mainAxisSpacing: 16.h,
                             childAspectRatio: 1.2,
                           ),
-                          itemCount: state.services.length,
+                          itemCount: homeState.services.length,
                           itemBuilder: (context, index) {
                             return Card(
                               elevation: 4,
@@ -127,7 +149,7 @@ class _HomePageState extends State<HomePage> {
                                     ),
                                     SizedBox(height: 8.h),
                                     Text(
-                                      state.services[index],
+                                      homeState.services[index],
                                       style: TextStyle(
                                         fontSize: 14.sp,
                                         fontWeight: FontWeight.w500,
@@ -143,13 +165,8 @@ class _HomePageState extends State<HomePage> {
                       ),
                     ],
                   ),
-                );
-              }
-              return const Center(child: Text("No services available"));
-            },
-          ),
-        ),
-      ),
+                )
+              : const Center(child: Text("No services available")),
     );
   }
 }

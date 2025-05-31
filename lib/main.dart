@@ -1,14 +1,12 @@
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
-import 'package:waari_water/core/di/injection_container.dart' as di;
 import 'package:waari_water/utils/constants.dart';
 import 'package:waari_water/utils/navigation.dart';
 import 'package:waari_water/view/splash_screen_page/splash_screen_page.dart';
 
-void main() async {
-  WidgetsFlutterBinding.ensureInitialized();
-  await di.init();
+void main() {
   runApp(const ProviderScope(child: MyApp()));
 }
 
@@ -18,19 +16,19 @@ class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return ScreenUtilInit(
-      designSize: const Size(375, 812),
+      designSize: const Size(360, 690),
       minTextAdapt: true,
       splitScreenMode: true,
       builder: (context, child) {
         return MaterialApp(
+          navigatorKey: CustomNavigation.navigatorKey,
           title: 'Waari Water',
+          debugShowCheckedModeBanner: false,
           theme: ThemeData(
-            primarySwatch: Colors.blue,
-            primaryColor: Constants.primaryColor,
+            colorScheme: ColorScheme.fromSeed(seedColor: Constants.primaryColor),
+            useMaterial3: true,
           ),
           home: const SplashScreen(),
-          navigatorKey: CustomNavigation.navigatorKey,
-          debugShowCheckedModeBanner: false,
         );
       },
     );
