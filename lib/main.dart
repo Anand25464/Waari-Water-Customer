@@ -7,11 +7,17 @@ import 'package:waari_water/controller/login_page_controller/login_page_controll
 import 'package:waari_water/controller/onboarding_page_controller/onboarding_page_controller.dart';
 import 'package:waari_water/controller/registration_controller/registration_controller.dart';
 import 'package:waari_water/features/auth/presentation/cubit/auth_cubit.dart';
+import 'package:waari_water/core/di/injection_container.dart' as di;
+import 'package:get_it/get_it.dart';
 import 'package:waari_water/utils/constants.dart';
 import 'package:waari_water/utils/navigation.dart';
 import 'package:waari_water/view/splash_screen_page/splash_screen_page.dart';
 
-void main() {
+final getIt = GetIt.instance;
+
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  await di.init();
   runApp(const MyApp());
 }
 
