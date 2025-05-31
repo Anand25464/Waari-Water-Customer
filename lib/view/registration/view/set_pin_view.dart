@@ -1,5 +1,6 @@
+
 import 'package:flutter/material.dart';
-import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:pinput/pinput.dart';
 import 'package:waari_water/controller/registration_controller/registration_controller.dart';
@@ -7,136 +8,130 @@ import 'package:waari_water/utils/constants.dart';
 import 'package:waari_water/utils/navigation.dart';
 import 'package:waari_water/view/home_page/home_page.dart';
 
-class SetPinView extends StatefulWidget {
+class SetPinView extends ConsumerStatefulWidget {
   const SetPinView({super.key});
 
   @override
-  State<SetPinView> createState() => _SetPinViewState();
+  ConsumerState<SetPinView> createState() => _SetPinViewState();
 }
 
-class _SetPinViewState extends State<SetPinView> {
+class _SetPinViewState extends ConsumerState<SetPinView> {
   final TextEditingController _pinController = TextEditingController();
   final TextEditingController _confirmPinController = TextEditingController();
 
   @override
   Widget build(BuildContext context) {
-    return BlocProvider(
-      create: (context) => RegistrationCubit(),
-      child: Scaffold(
-        appBar: AppBar(
-          title: Text(
-            "Set M-PIN",
-            style: TextStyle(fontSize: 18.sp),
+    final registrationState = ref.watch(registrationControllerProvider);
+
+    ref.listen<RegistrationState>(registrationControllerProvider, (previous, next) {
+      if (next.message != null && next.message!.isNotEmpty) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(next.message!),
+            backgroundColor: Colors.green,
           ),
-          backgroundColor: Constants.primaryColor,
+        );
+        CustomNavigation.pushNamed(const HomePage());
+      } else if (next.error != null && next.error!.isNotEmpty) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(next.error!),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    });
+
+    return Scaffold(
+      appBar: AppBar(
+        title: Text(
+          "Set M-PIN",
+          style: TextStyle(fontSize: 18.sp),
         ),
-        body: BlocListener<RegistrationCubit, RegistrationState>(
-          listener: (context, state) {
-            if (state is RegistrationSuccess) {
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(
-                  content: Text(state.message),
-                  backgroundColor: Colors.green,
+        backgroundColor: Constants.primaryColor,
+      ),
+      body: Padding(
+        padding: EdgeInsets.all(20.w),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Text(
+              "Set your 4-digit M-PIN",
+              style: TextStyle(
+                fontSize: 20.sp,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+            SizedBox(height: 30.h),
+            Text(
+              "Enter PIN",
+              style: TextStyle(
+                fontSize: 16.sp,
+                fontWeight: FontWeight.w500,
+              ),
+            ),
+            SizedBox(height: 10.h),
+            Pinput(
+              controller: _pinController,
+              length: 4,
+              obscureText: true,
+              defaultPinTheme: PinTheme(
+                width: 56.w,
+                height: 56.h,
+                textStyle: TextStyle(
+                  fontSize: 20.sp,
+                  fontWeight: FontWeight.w600,
                 ),
-              );
-              CustomNavigation.pushNamed(const HomePage());
-            } else if (state is RegistrationError) {
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(
-                  content: Text(state.message),
-                  backgroundColor: Colors.red,
+                decoration: BoxDecoration(
+                  border: Border.all(color: Constants.primaryColor),
+                  borderRadius: BorderRadius.circular(8.r),
                 ),
-              );
-            }
-          },
-          child: BlocBuilder<RegistrationCubit, RegistrationState>(
-            builder: (context, state) {
-              return Padding(
-                padding: EdgeInsets.all(20.w),
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Text(
-                      "Set your 4-digit M-PIN",
-                      style: TextStyle(
-                        fontSize: 20.sp,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                    SizedBox(height: 30.h),
-                    Text(
-                      "Enter PIN",
-                      style: TextStyle(
-                        fontSize: 16.sp,
-                        fontWeight: FontWeight.w500,
-                      ),
-                    ),
-                    SizedBox(height: 10.h),
-                    Pinput(
-                      controller: _pinController,
-                      length: 4,
-                      obscureText: true,
-                      defaultPinTheme: PinTheme(
-                        width: 56.w,
-                        height: 56.h,
-                        textStyle: TextStyle(
-                          fontSize: 20.sp,
-                          fontWeight: FontWeight.w600,
-                        ),
-                        decoration: BoxDecoration(
-                          border: Border.all(color: Constants.primaryColor),
-                          borderRadius: BorderRadius.circular(8.r),
-                        ),
-                      ),
-                    ),
-                    SizedBox(height: 30.h),
-                    Text(
-                      "Confirm PIN",
-                      style: TextStyle(
-                        fontSize: 16.sp,
-                        fontWeight: FontWeight.w500,
-                      ),
-                    ),
-                    SizedBox(height: 10.h),
-                    Pinput(
-                      controller: _confirmPinController,
-                      length: 4,
-                      obscureText: true,
-                      defaultPinTheme: PinTheme(
-                        width: 56.w,
-                        height: 56.h,
-                        textStyle: TextStyle(
-                          fontSize: 20.sp,
-                          fontWeight: FontWeight.w600,
-                        ),
-                        decoration: BoxDecoration(
-                          border: Border.all(color: Constants.primaryColor),
-                          borderRadius: BorderRadius.circular(8.r),
-                        ),
-                      ),
-                    ),
-                    SizedBox(height: 40.h),
-                    SizedBox(
-                      width: double.infinity,
-                      child: ElevatedButton(
-                        onPressed: state is RegistrationLoading
-                            ? null
-                            : () {
-                                context.read<RegistrationCubit>().setPin(
-                                  _pinController.text,
-                                  _confirmPinController.text,
-                                );
-                              },
-                        child: state is RegistrationLoading
-                            ? const CircularProgressIndicator()
-                            : const Text('Set PIN'),
-                      ),
-                    ),
-                  ],
+              ),
+            ),
+            SizedBox(height: 30.h),
+            Text(
+              "Confirm PIN",
+              style: TextStyle(
+                fontSize: 16.sp,
+                fontWeight: FontWeight.w500,
+              ),
+            ),
+            SizedBox(height: 10.h),
+            Pinput(
+              controller: _confirmPinController,
+              length: 4,
+              obscureText: true,
+              defaultPinTheme: PinTheme(
+                width: 56.w,
+                height: 56.h,
+                textStyle: TextStyle(
+                  fontSize: 20.sp,
+                  fontWeight: FontWeight.w600,
                 ),
-              );
-            },
-          ),
+                decoration: BoxDecoration(
+                  border: Border.all(color: Constants.primaryColor),
+                  borderRadius: BorderRadius.circular(8.r),
+                ),
+              ),
+            ),
+            SizedBox(height: 40.h),
+            SizedBox(
+              width: double.infinity,
+              child: ElevatedButton(
+                onPressed: registrationState.isLoading
+                    ? null
+                    : () {
+                        ref.read(registrationControllerProvider.notifier).setPin(
+                          _pinController.text,
+                          _confirmPinController.text,
+                        );
+                      },
+                child: registrationState.isLoading
+                    ? const CircularProgressIndicator()
+                    : const Text('Set PIN'),
+              ),
+            ),
+          ],
         ),
       ),
     );

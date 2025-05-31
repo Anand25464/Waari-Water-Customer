@@ -1,83 +1,78 @@
+
 import 'package:flutter/material.dart';
-import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:waari_water/controller/login_page_controller/login_page_controller.dart';
 import 'package:waari_water/utils/constants.dart';
 
-class LoginPage extends StatefulWidget {
+class LoginPage extends ConsumerStatefulWidget {
   const LoginPage({super.key});
 
   @override
-  State<LoginPage> createState() => _LoginPageState();
+  ConsumerState<LoginPage> createState() => _LoginPageState();
 }
 
-class _LoginPageState extends State<LoginPage> {
+class _LoginPageState extends ConsumerState<LoginPage> {
   final TextEditingController _phoneController = TextEditingController();
 
   @override
   Widget build(BuildContext context) {
-    return BlocProvider(
-      create: (context) => LoginPageCubit(),
-      child: Scaffold(
-        appBar: AppBar(
-          title: Text(
-            "Login",
-            style: TextStyle(fontSize: 18.sp),
+    final loginState = ref.watch(loginPageControllerProvider);
+
+    ref.listen<LoginPageState>(loginPageControllerProvider, (previous, next) {
+      if (next is LoginPageSuccess) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(next.message),
+            backgroundColor: Colors.green,
           ),
-          backgroundColor: Constants.primaryColor,
+        );
+      } else if (next is LoginPageError) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(next.message),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    });
+
+    return Scaffold(
+      appBar: AppBar(
+        title: Text(
+          "Login",
+          style: TextStyle(fontSize: 18.sp),
         ),
-        body: BlocListener<LoginPageCubit, LoginPageState>(
-          listener: (context, state) {
-            if (state is LoginPageSuccess) {
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(
-                  content: Text(state.message),
-                  backgroundColor: Colors.green,
-                ),
-              );
-            } else if (state is LoginPageError) {
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(
-                  content: Text(state.message),
-                  backgroundColor: Colors.red,
-                ),
-              );
-            }
-          },
-          child: BlocBuilder<LoginPageCubit, LoginPageState>(
-            builder: (context, state) {
-              return Padding(
-                padding: EdgeInsets.all(16.w),
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    TextField(
-                      controller: _phoneController,
-                      decoration: const InputDecoration(
-                        labelText: 'Phone Number',
-                        border: OutlineInputBorder(),
-                      ),
-                      keyboardType: TextInputType.phone,
-                    ),
-                    SizedBox(height: 20.h),
-                    SizedBox(
-                      width: double.infinity,
-                      child: ElevatedButton(
-                        onPressed: state is LoginPageLoading
-                            ? null
-                            : () {
-                                context.read<LoginPageCubit>().login(_phoneController.text);
-                              },
-                        child: state is LoginPageLoading
-                            ? const CircularProgressIndicator()
-                            : const Text('Login'),
-                      ),
-                    ),
-                  ],
-                ),
-              );
-            },
-          ),
+        backgroundColor: Constants.primaryColor,
+      ),
+      body: Padding(
+        padding: EdgeInsets.all(16.w),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            TextField(
+              controller: _phoneController,
+              decoration: const InputDecoration(
+                labelText: 'Phone Number',
+                border: OutlineInputBorder(),
+              ),
+              keyboardType: TextInputType.phone,
+            ),
+            SizedBox(height: 20.h),
+            SizedBox(
+              width: double.infinity,
+              child: ElevatedButton(
+                onPressed: loginState is LoginPageLoading
+                    ? null
+                    : () {
+                        ref.read(loginPageControllerProvider.notifier).login(_phoneController.text);
+                      },
+                child: loginState is LoginPageLoading
+                    ? const CircularProgressIndicator()
+                    : const Text('Login'),
+              ),
+            ),
+          ],
         ),
       ),
     );
