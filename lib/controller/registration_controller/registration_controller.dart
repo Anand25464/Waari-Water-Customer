@@ -1,193 +1,195 @@
-import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:equatable/equatable.dart';
 
-// States
-abstract class RegistrationState extends Equatable {
-  const RegistrationState();
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-  @override
-  List<Object> get props => [];
+// Registration State
+class RegistrationState {
+  final int currentStep;
+  final String name;
+  final String phoneNumber;
+  final String pin;
+  final bool isLoading;
+  final String? message;
+  final String? error;
+
+  const RegistrationState({
+    this.currentStep = 0,
+    this.name = '',
+    this.phoneNumber = '',
+    this.pin = '',
+    this.isLoading = false,
+    this.message,
+    this.error,
+  });
+
+  RegistrationState copyWith({
+    int? currentStep,
+    String? name,
+    String? phoneNumber,
+    String? pin,
+    bool? isLoading,
+    String? message,
+    String? error,
+  }) {
+    return RegistrationState(
+      currentStep: currentStep ?? this.currentStep,
+      name: name ?? this.name,
+      phoneNumber: phoneNumber ?? this.phoneNumber,
+      pin: pin ?? this.pin,
+      isLoading: isLoading ?? this.isLoading,
+      message: message ?? this.message,
+      error: error ?? this.error,
+    );
+  }
 }
 
-class RegistrationInitial extends RegistrationState {}
-
-class RegistrationLoading extends RegistrationState {}
-
-class RegistrationSuccess extends RegistrationState {
-  final String message;
-
-  const RegistrationSuccess(this.message);
-
-  @override
-  List<Object> get props => [message];
-}
-
-class RegistrationError extends RegistrationState {
-  final String message;
-
-  const RegistrationError(this.message);
-
-  @override
-  List<Object> get props => [message];
-}
-
-class RegistrationStepChanged extends RegistrationState {
-  final int step;
-
-  const RegistrationStepChanged(this.step);
-
-  @override
-  List<Object> get props => [step];
-}
-
-// Cubit
-class RegistrationCubit extends Cubit<RegistrationState> {
-  RegistrationCubit() : super(RegistrationInitial());
-
-  int _currentStep = 0;
-  String _name = '';
-  String _phoneNumber = '';
-  String _pin = '';
+// Registration Controller using Riverpod
+class RegistrationController extends StateNotifier<RegistrationState> {
+  RegistrationController() : super(const RegistrationState());
 
   void setName(String name) {
-    _name = name;
+    state = state.copyWith(name: name);
   }
 
   void setPhoneNumber(String phoneNumber) {
-    _phoneNumber = phoneNumber;
+    state = state.copyWith(phoneNumber: phoneNumber);
   }
 
   void setPin(String pin, String confirmPin) {
     if (pin.isEmpty || confirmPin.isEmpty) {
-      emit(RegistrationError("Please enter both PIN and confirmation PIN"));
+      state = state.copyWith(error: "Please enter both PIN and confirmation PIN");
       return;
     }
     
     if (pin.length != 4 || confirmPin.length != 4) {
-      emit(RegistrationError("PIN must be 4 digits"));
+      state = state.copyWith(error: "PIN must be 4 digits");
       return;
     }
     
     if (pin != confirmPin) {
-      emit(RegistrationError("PINs do not match"));
+      state = state.copyWith(error: "PINs do not match");
       return;
     }
     
-    _pin = pin;
-    emit(RegistrationLoading());
+    state = state.copyWith(pin: pin, isLoading: true, error: null);
     
     // Simulate API call delay
     Future.delayed(const Duration(seconds: 1), () {
-      emit(RegistrationSuccess("PIN set successfully"));
+      state = state.copyWith(
+        isLoading: false,
+        message: "PIN set successfully",
+      );
     });
   }
 
   void nextStep() {
-    _currentStep++;
-    emit(RegistrationStepChanged(_currentStep));
+    state = state.copyWith(currentStep: state.currentStep + 1);
   }
 
   void previousStep() {
-    if (_currentStep > 0) {
-      _currentStep--;
-      emit(RegistrationStepChanged(_currentStep));
+    if (state.currentStep > 0) {
+      state = state.copyWith(currentStep: state.currentStep - 1);
     }
   }
 
-  void register() async {
-    emit(RegistrationLoading());
+  Future<void> register() async {
+    state = state.copyWith(isLoading: true, error: null);
     try {
-      // Add your registration logic here
       await Future.delayed(const Duration(seconds: 2)); // Simulate API call
-      emit(RegistrationSuccess("Registration successful"));
+      state = state.copyWith(
+        isLoading: false,
+        message: "Registration successful",
+      );
     } catch (e) {
-      emit(RegistrationError("Registration failed: ${e.toString()}"));
+      state = state.copyWith(
+        isLoading: false,
+        error: "Registration failed: ${e.toString()}",
+      );
     }
   }
 
   Future<void> registerUserDetails(String name, String email) async {
     if (name.isEmpty) {
-      emit(RegistrationError("Please enter your name"));
+      state = state.copyWith(error: "Please enter your name");
       return;
     }
     
     if (email.isEmpty) {
-      emit(RegistrationError("Please enter your email"));
+      state = state.copyWith(error: "Please enter your email");
       return;
     }
 
-    emit(RegistrationLoading());
+    state = state.copyWith(isLoading: true, error: null);
 
     try {
-      // Set the user details
       setName(name);
-      // You might want to add email field to the cubit state if needed
-      
-      // Simulate API call delay
       await Future.delayed(const Duration(seconds: 2));
-
-      // Here you would typically make an API call to register user details
-      // For now, we'll just simulate a successful response
-      emit(RegistrationSuccess("User details registered successfully"));
+      state = state.copyWith(
+        isLoading: false,
+        message: "User details registered successfully",
+      );
     } catch (e) {
-      emit(RegistrationError("Failed to register user details: ${e.toString()}"));
+      state = state.copyWith(
+        isLoading: false,
+        error: "Failed to register user details: ${e.toString()}",
+      );
     }
   }
 
   Future<void> registerPhone(String phoneNumber) async {
     if (phoneNumber.isEmpty) {
-      emit(RegistrationError("Please enter phone number"));
+      state = state.copyWith(error: "Please enter phone number");
       return;
     }
 
-    emit(RegistrationLoading());
+    state = state.copyWith(isLoading: true, error: null);
 
     try {
-      // Set the phone number
       setPhoneNumber(phoneNumber);
-      
-      // Simulate API call delay
       await Future.delayed(const Duration(seconds: 2));
-
-      // Here you would typically make an API call to register/verify phone number
-      // For now, we'll just simulate a successful response
-      emit(RegistrationSuccess("Phone number registered successfully"));
+      state = state.copyWith(
+        isLoading: false,
+        message: "Phone number registered successfully",
+      );
     } catch (e) {
-      emit(RegistrationError("Failed to register phone number: ${e.toString()}"));
+      state = state.copyWith(
+        isLoading: false,
+        error: "Failed to register phone number: ${e.toString()}",
+      );
     }
   }
 
   Future<void> resetPassword(String phoneNumber) async {
     if (phoneNumber.isEmpty) {
-      emit(RegistrationError("Please enter phone number"));
+      state = state.copyWith(error: "Please enter phone number");
       return;
     }
 
-    emit(RegistrationLoading());
+    state = state.copyWith(isLoading: true, error: null);
 
     try {
-      // Simulate API call delay
       await Future.delayed(const Duration(seconds: 2));
-
-      // Here you would typically make an API call to send reset password link
-      // For now, we'll just simulate a successful response
-      emit(RegistrationSuccess("Reset link sent to $phoneNumber"));
+      state = state.copyWith(
+        isLoading: false,
+        message: "Reset link sent to $phoneNumber",
+      );
     } catch (e) {
-      emit(RegistrationError("Failed to send reset link: ${e.toString()}"));
+      state = state.copyWith(
+        isLoading: false,
+        error: "Failed to send reset link: ${e.toString()}",
+      );
     }
   }
 
   void reset() {
-    _currentStep = 0;
-    _name = '';
-    _phoneNumber = '';
-    _pin = '';
-    emit(RegistrationInitial());
+    state = const RegistrationState();
   }
 
-  // Getters
-  int get currentStep => _currentStep;
-  String get name => _name;
-  String get phoneNumber => _phoneNumber;
-  String get pin => _pin;
+  void clearMessages() {
+    state = state.copyWith(message: null, error: null);
+  }
 }
+
+// Provider for Registration Controller
+final registrationControllerProvider = StateNotifierProvider<RegistrationController, RegistrationState>((ref) {
+  return RegistrationController();
+});

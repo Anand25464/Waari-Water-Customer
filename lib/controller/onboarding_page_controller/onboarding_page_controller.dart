@@ -1,54 +1,59 @@
 
-import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:equatable/equatable.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-// States
-abstract class OnboardingPageState extends Equatable {
-  const OnboardingPageState();
+// Onboarding Page State
+class OnboardingPageState {
+  final int currentPage;
+  final bool isCompleted;
 
-  @override
-  List<Object> get props => [];
+  const OnboardingPageState({
+    this.currentPage = 0,
+    this.isCompleted = false,
+  });
+
+  OnboardingPageState copyWith({
+    int? currentPage,
+    bool? isCompleted,
+  }) {
+    return OnboardingPageState(
+      currentPage: currentPage ?? this.currentPage,
+      isCompleted: isCompleted ?? this.isCompleted,
+    );
+  }
 }
 
-class OnboardingPageInitial extends OnboardingPageState {}
-
-class OnboardingPageChanged extends OnboardingPageState {
-  final int currentIndex;
-
-  const OnboardingPageChanged(this.currentIndex);
-
-  @override
-  List<Object> get props => [currentIndex];
-}
-
-class OnboardingPageCompleted extends OnboardingPageState {}
-
-// Cubit
-class OnboardingPageCubit extends Cubit<OnboardingPageState> {
-  OnboardingPageCubit() : super(OnboardingPageInitial());
-
-  int _currentIndex = 0;
+// Onboarding Page Controller using Riverpod
+class OnboardingPageController extends StateNotifier<OnboardingPageState> {
+  OnboardingPageController() : super(const OnboardingPageState());
 
   void nextPage() {
-    _currentIndex++;
-    emit(OnboardingPageChanged(_currentIndex));
-  }
-
-  void previousPage() {
-    if (_currentIndex > 0) {
-      _currentIndex--;
-      emit(OnboardingPageChanged(_currentIndex));
+    if (state.currentPage < 2) { // Assuming 3 onboarding pages (0, 1, 2)
+      state = state.copyWith(currentPage: state.currentPage + 1);
+    } else {
+      state = state.copyWith(isCompleted: true);
     }
   }
 
-  void setPage(int index) {
-    _currentIndex = index;
-    emit(OnboardingPageChanged(_currentIndex));
+  void previousPage() {
+    if (state.currentPage > 0) {
+      state = state.copyWith(currentPage: state.currentPage - 1);
+    }
+  }
+
+  void goToPage(int page) {
+    state = state.copyWith(currentPage: page);
   }
 
   void completeOnboarding() {
-    emit(OnboardingPageCompleted());
+    state = state.copyWith(isCompleted: true);
   }
 
-  int get currentIndex => _currentIndex;
+  void reset() {
+    state = const OnboardingPageState();
+  }
 }
+
+// Provider for Onboarding Page Controller
+final onboardingPageControllerProvider = StateNotifierProvider<OnboardingPageController, OnboardingPageState>((ref) {
+  return OnboardingPageController();
+});
